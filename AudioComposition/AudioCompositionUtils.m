@@ -60,26 +60,12 @@
 
 //循环一段音频指定次数输出
 + (void)combineSourceURL:(NSURL *)sourceURL withLoopCount:(NSUInteger)count toURL:(NSURL *)toURL completed:(void (^)(NSError *error))completed {
-    if (count < 2) {
-        completed([NSError errorWithDomain:@"loopCount should more than one" code:nil userInfo:nil]);
-        return;
-    }
-
-    AVMutableComposition *mixComposition = [AVMutableComposition composition];
-    AVMutableCompositionTrack *compositionAudioTrack = [mixComposition addMutableTrackWithMediaType:AVMediaTypeAudio preferredTrackID:kCMPersistentTrackID_Invalid];
-    NSError *error = nil;
-    AVURLAsset *audioAsset = [[AVURLAsset alloc] initWithURL:sourceURL.filePathURL options:nil];
-    CMTime duration = audioAsset.duration;
-    CMTimeRange audio_timeRange = CMTimeRangeMake(kCMTimeZero, duration);
+    NSMutableArray *sourceURLs= [NSMutableArray arrayWithCapacity:count];
     for (int i = 0; i < count; i++) {
-        BOOL success = [compositionAudioTrack insertTimeRange:audio_timeRange ofTrack:[self getTrackWithAsset:audioAsset] atTime:CMTimeMultiply(duration, i) error:&error];
-        if (!success) {
-            completed(error);
-            return;
-        }
+        [sourceURLs addObject:sourceURL];
     }
 
-    [self exportAudioWithComposition:mixComposition toURL:toURL completed:completed];
+    [self combineSourceURLs:sourceURLs toURL:toURL completed:completed];
 }
 
 + (void)combineSourceURL:(NSURL *)sourceURL toTotalDuration:(CMTime)totalDuration frontClip:(CMTime)clipTime toURL:(NSURL *)toURL completed:(void (^)(NSError *error))completed {
@@ -156,10 +142,6 @@
 + (AVAssetTrack *)getTrackWithAsset:(AVAsset *)asset {
     NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeAudio];
     return tracks.count > 0 ? tracks[0] : nil;
-}
-
-+ (void)logTime:(CMTime)time {
-    NSLog(@"[%@ %s] %lld/%d", self.class, sel_getName(_cmd), time.value, time.timescale);
 }
 
 @end
